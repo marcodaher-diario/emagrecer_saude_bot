@@ -1,151 +1,223 @@
+# -*- coding: utf-8 -*-
+
 import os
 import random
-import requests
-import json
-import re
-from google import genai
+from datetime import datetime, timedelta
 from google.oauth2.credentials import Credentials
-from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 
-# Importando sua Identidade Visual e Assinatura
-try:
-    from template_blog import obter_esqueleto_html
-except ImportError:
-    print("❌ Erro: Arquivo template_blog.py não encontrado!")
-    
-try:
-    from configuracoes import BLOCO_FIXO_FINAL
-except ImportError:
-    BLOCO_FIXO_FINAL = ""
+from configuracoes import (
+    BLOG_ID,
+    AGENDA_POSTAGENS,
+    JANELA_MINUTOS,
+    CATEGORIAS_EDITORIAIS,
+    ARQUIVO_CONTROLE_AGENDAMENTO,
+    ARQUIVO_CONTROLE_TEMAS,
+    DIAS_BLOQUEIO_TEMA,
+    BLOCO_FIXO_FINAL
+)
 
-# CONFIGURAÇÕES DE IDENTIFICAÇÃO
-BLOG_ID = "5251820458826857223"
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-PEXELS_API_KEY = os.getenv("PEXELS_API_KEY")
+from gemini_engine import GeminiEngine
+from imagem_engine import ImageEngine
+from template_blog import obter_esqueleto_html
 
-client = genai.Client(api_key=GEMINI_API_KEY)
 
-def gerar_tags_seo(titulo, texto_completo):
-    """Gera labels inteligentes para o Blogger e insere a marca Marco Daher."""
-    stopwords = ["com", "de", "do", "da", "em", "para", "um", "uma", "os", "as", "que", "no", "na", "ao", "aos", "o", "a", "e"]
-    conteudo = f"{titulo} {texto_completo[:300]}"
-    palavras = re.findall(r'\b\w{4,}\b', conteudo.lower())
-    
+# ==========================================================
+# UTILIDADES DE TEMPO
+# ==========================================================
+
+def obter_horario_brasilia():
+    return datetime.utcnow() - timedelta(hours=3)
+
+
+def horario_para_minutos(hhmm):
+    h, m = map(int, hhmm.split(":"))
+    return h * 60 + m
+
+
+def dentro_da_janela(min_atual, min_agenda):
+    return abs(min_atual - min_agenda) <= JANELA_MINUTOS
+
+
+# ==========================================================
+# CONTROLE DE AGENDAMENTO
+# ==========================================================
+
+def ja_postou(data_str, horario):
+    if not os.path.exists(ARQUIVO_CONTROLE_AGENDAMENTO):
+        return False
+
+    with open(ARQUIVO_CONTROLE_AGENDAMENTO, "r", encoding="utf-8") as f:
+        for linha in f:
+            data, hora = linha.strip().split("|")
+            if data == data_str and hora == horario:
+                return True
+    return False
+
+
+def registrar_postagem(data_str, horario):
+    with open(ARQUIVO_CONTROLE_AGENDAMENTO, "a", encoding="utf-8") as f:
+        f.write(f"{data_str}|{horario}\n")
+
+
+# ==========================================================
+# CONTROLE DE TEMA
+# ==========================================================
+
+def tema_usado_recentemente(titulo):
+
+    if not os.path.exists(ARQUIVO_CONTROLE_TEMAS):
+        return False
+
+    hoje = datetime.utcnow()
+
+    with open(ARQUIVO_CONTROLE_TEMAS, "r", encoding="utf-8") as f:
+        for linha in f:
+            linha = linha.strip()
+            if "|" not in linha:
+                continue
+
+            data_str, titulo_salvo = linha.split("|")
+
+            try:
+                data_tema = datetime.strptime(data_str, "%Y-%m-%d")
+            except:
+                continue
+
+            if titulo_salvo.lower() == titulo.lower() and (hoje - data_tema).days < DIAS_BLOQUEIO_TEMA:
+                return True
+
+    return False
+
+
+def registrar_tema(titulo):
+    hoje = datetime.utcnow().strftime("%Y-%m-%d")
+
+    with open(ARQUIVO_CONTROLE_TEMAS, "a", encoding="utf-8") as f:
+        f.write(f"{hoje}|{titulo}\n")
+
+
+# ==========================================================
+# GERAR TAGS SEO
+# ==========================================================
+
+def gerar_tags_seo(titulo):
+
+    palavras = titulo.lower().split()
     tags = []
+
     for p in palavras:
-        if p not in stopwords and p not in tags:
+        p = p.strip(",.:-")
+        if len(p) > 3 and p not in tags:
             tags.append(p.capitalize())
-    
-    tags_fixas = ["Emagrecer", "Saúde", "Marco Daher"]
+
+    tags_fixas = ["Emagrecimento", "Saúde", "Vida Saudável", "Marco Daher"]
+
     for tf in tags_fixas:
-        if tf not in tags: tags.append(tf)
-    
-    resultado = []
-    tamanho_atual = 0
-    for tag in tags:
-        if tamanho_atual + len(tag) + 2 <= 200:
-            resultado.append(tag)
-            tamanho_atual += len(tag) + 2
-        else: break
-    return resultado
+        if tf not in tags:
+            tags.append(tf)
 
-def renovar_token():
-    """Valida o acesso ao Blogger usando o Refresh Token."""
-    with open("token.json", "r") as f:
-        info = json.load(f)
-    creds = Credentials.from_authorized_user_info(info, ["https://www.googleapis.com/auth/blogger"])
-    if creds.expired and creds.refresh_token:
-        creds.refresh(Request())
-        with open("token.json", "w") as f:
-            f.write(creds.to_json())
-    return creds
+    return tags[:10]
 
-def buscar_fotos_aleatorias(tema, quantidade=2):
-    """Pool de 15 fotos para evitar repetições próximas."""
-    url = f"https://api.pexels.com/v1/search?query={tema}&orientation=landscape&per_page=15"
-    headers = {"Authorization": PEXELS_API_KEY}
-    pool_fotos = []
-    try:
-        r = requests.get(url, headers=headers).json()
-        for foto in r.get('photos', []):
-            pool_fotos.append(foto['src']['large2x'])
-    except: pass
-    
-    # CORREÇÃO: random.sample usa o argumento 'k' e não 'quantity'
-    if len(pool_fotos) >= quantidade:
-        return random.sample(pool_fotos, k=quantidade)
-    return ["https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg"] * quantidade
 
-def executar():
-    with open("temas.txt", "r", encoding="utf-8") as f:
-        temas = [l.strip() for l in f.readlines() if l.strip()]
-    
-    tema = random.choice(temas)
-    print(f"🚀 Produzindo Artigo Longo e SEO: {tema}")
-
-    prompt_json = (
-        f"Aja como um redator especialista. Escreva um artigo PROFUNDO de 800 palavras sobre {tema}.\n"
-        "Responda EXCLUSIVAMENTE em formato JSON com estas chaves:\n"
-        "'intro', 'sub1', 'texto1', 'sub2', 'texto2', 'sub3', 'texto3', 'texto_conclusao'.\n"
-        "Não use Markdown, não use '#', use tom educativo e profissional."
-    )
-
-    try:
-        response = client.models.generate_content(
-            model="gemini-3-flash-preview", 
-            contents=prompt_json,
-            config={'response_mime_type': 'application/json'}
-        )
-        
-        # Garante que 'conteudo' seja um dicionário, mesmo que venha em lista
-        res_data = json.loads(response.text)
-        conteudo = res_data[0] if isinstance(res_data, list) else res_data
-
-    except Exception as e:
-        print(f"Erro na geração ou leitura do JSON: {e}")
-        return
-
-    # Geração de SEO e Busca de Imagens
-    texto_total = f"{conteudo.get('intro','')} {conteudo.get('texto1','')} {conteudo.get('texto2','')}"
-    tags_geradas = gerar_tags_seo(tema, texto_total)
-    fotos = buscar_fotos_aleatorias(tema)
-
-    # Organização dos dados para o Template_blog.py
-    dados_post = {
-        'titulo': tema,
-        'img_topo': fotos[0],
-        'img_meio': fotos[1],
-        'intro': conteudo.get('intro', '').replace('\n', '<br/>'),
-        'sub1': conteudo.get('sub1', 'Destaque'),
-        'texto1': conteudo.get('texto1', '').replace('\n', '<br/>'),
-        'sub2': conteudo.get('sub2', 'Saiba Mais'),
-        'texto2': conteudo.get('texto2', '').replace('\n', '<br/>'),
-        'sub3': conteudo.get('sub3', 'Dica Prática'),
-        'texto3': conteudo.get('texto3', '').replace('\n', '<br/>'),
-        'texto_conclusao': conteudo.get('texto_conclusao', '').replace('\n', '<br/>'),
-        'assinatura': BLOCO_FIXO_FINAL
-    }
-
-    html_final = obter_esqueleto_html(dados_post)
-
-    # PUBLICAÇÃO NO BLOGGER
-    try:
-        creds = renovar_token()
-        service = build("blogger", "v3", credentials=creds)
-        
-        corpo_post = {
-            "kind": "blogger#post",
-            "title": tema.title(),
-            "content": html_final,
-            "labels": tags_geradas,
-            "status": "LIVE"
-        }
-        
-        service.posts().insert(blogId=BLOG_ID, body=corpo_post).execute()
-        print(f"✅ SUCESSO! Post publicado com {len(tags_geradas)} labels.")
-    except Exception as e:
-        print(f"❌ Erro ao publicar no Blogger: {e}")
+# ==========================================================
+# EXECUÇÃO PRINCIPAL
+# ==========================================================
 
 if __name__ == "__main__":
-    executar()
+
+    # MODO TESTE
+    if os.getenv("TEST_MODE") == "true":
+
+        print("=== MODO TESTE ATIVADO ===")
+
+        categoria = random.choice(CATEGORIAS_EDITORIAIS)
+
+        gemini = GeminiEngine()
+        imagem_engine = ImageEngine()
+
+        titulo = gemini.gerar_tema(categoria)
+        texto = gemini.gerar_artigo(titulo, categoria)
+        imagem = imagem_engine.obter_imagem(titulo)
+
+        html = obter_esqueleto_html({
+            "titulo": titulo,
+            "imagem": imagem,
+            "texto_completo": texto,
+            "assinatura": BLOCO_FIXO_FINAL
+        })
+
+        service = Credentials.from_authorized_user_file("token.json")
+        service = build("blogger", "v3", credentials=service)
+
+        service.posts().insert(
+            blogId=BLOG_ID,
+            body={
+                "title": titulo,
+                "content": html,
+                "labels": gerar_tags_seo(titulo)
+            },
+            isDraft=True
+        ).execute()
+
+        print("Post de teste criado como rascunho.")
+        exit()
+
+    # EXECUÇÃO NORMAL
+    agora = obter_horario_brasilia()
+    min_atual = agora.hour * 60 + agora.minute
+    data_hoje = agora.strftime("%Y-%m-%d")
+
+    horario_escolhido = None
+
+    for horario_agenda in AGENDA_POSTAGENS:
+
+        min_agenda = horario_para_minutos(horario_agenda)
+
+        if dentro_da_janela(min_atual, min_agenda):
+            if not ja_postou(data_hoje, horario_agenda):
+                horario_escolhido = horario_agenda
+                break
+
+    if not horario_escolhido:
+        exit()
+
+    gemini = GeminiEngine()
+    imagem_engine = ImageEngine()
+
+    # Rotação inteligente de categoria
+    categoria = random.choice(CATEGORIAS_EDITORIAIS)
+
+    # Geração com bloqueio de repetição
+    for _ in range(5):
+        titulo = gemini.gerar_tema(categoria)
+        if not tema_usado_recentemente(titulo):
+            break
+
+    texto = gemini.gerar_artigo(titulo, categoria)
+    imagem = imagem_engine.obter_imagem(titulo)
+
+    html = obter_esqueleto_html({
+        "titulo": titulo,
+        "imagem": imagem,
+        "texto_completo": texto,
+        "assinatura": BLOCO_FIXO_FINAL
+    })
+
+    service = Credentials.from_authorized_user_file("token.json")
+    service = build("blogger", "v3", credentials=service)
+
+    service.posts().insert(
+        blogId=BLOG_ID,
+        body={
+            "title": titulo,
+            "content": html,
+            "labels": gerar_tags_seo(titulo)
+        },
+        isDraft=False
+    ).execute()
+
+    registrar_postagem(data_hoje, horario_escolhido)
+    registrar_tema(titulo)
+
+    print("Post publicado com sucesso.")
