@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import re
 from google import genai
 from configuracoes import MODELO_GEMINI, MIN_PALAVRAS, MAX_PALAVRAS
 
@@ -40,8 +41,6 @@ Entregue apenas o título final.
             model=MODELO_GEMINI,
             contents=prompt
         )
-
-       import re
 
        texto = response.text.strip().replace('"', '')
         
