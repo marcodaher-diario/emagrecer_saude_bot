@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import os
-import re
 from google import genai
 from configuracoes import MODELO_GEMINI, MIN_PALAVRAS, MAX_PALAVRAS
 
