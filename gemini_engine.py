@@ -42,8 +42,6 @@ Entregue apenas o título final.
             contents=prompt
         )
 
-       texto = response.text.strip().replace('"', '')
-        
        return response.text.strip().replace('"', '')
 
     # ==========================================================
