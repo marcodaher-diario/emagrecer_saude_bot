@@ -43,12 +43,12 @@ Entregue apenas o título final.
 
        import re
 
-        texto = response.text.strip().replace('"', '')
+       texto = response.text.strip().replace('"', '')
         
-        # Converter markdown **texto** para HTML <strong>texto</strong>
-        texto = re.sub(r"\*\*(.*?)\*\*", r"<strong>\1</strong>", texto)
+       # Converter markdown **texto** para HTML <strong>texto</strong>
+       texto = re.sub(r"\*\*(.*?)\*\*", r"<strong>\1</strong>", texto)
         
-        return texto
+       return texto
 
     # ==========================================================
     # GERAR ARTIGO COMPLETO
