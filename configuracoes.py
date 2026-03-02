@@ -43,7 +43,7 @@ DIAS_BLOQUEIO_IMAGEM = 30
 # CONFIGURAÇÃO GEMINI
 # ==========================================
 
-MODELO_GEMINI = "models/gemini-2.5-flash"
+MODELO_GEMINI = "gemini-3-flash-preview"
 
 MIN_PALAVRAS = 600
 MAX_PALAVRAS = 800
