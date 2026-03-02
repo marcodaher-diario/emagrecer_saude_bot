@@ -36,7 +36,7 @@ Regras obrigatórias:
 Entregue apenas o título final.
 """
 
-         response = client.models.generate_content(
+        response = client.models.generate_content(
     model="gemini-3-flash-preview", contents=prompt
         )
 
@@ -76,7 +76,7 @@ Importante:
 - Entregue apenas o texto final já estruturado
 """
 
-        response = client.models.generate_content(
+       response = client.models.generate_content(
     model="gemini-3-flash-preview", contents=prompt
         )
 
