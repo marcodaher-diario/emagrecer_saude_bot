@@ -45,8 +45,8 @@ DIAS_BLOQUEIO_IMAGEM = 30
 
 MODELO_GEMINI = "models/gemini-2.5-flash"
 
-MIN_PALAVRAS = 800
-MAX_PALAVRAS = 1000
+MIN_PALAVRAS = 600
+MAX_PALAVRAS = 800
 
 # ==========================================
 # BLOCO FIXO FINAL -  ASSINATURA
