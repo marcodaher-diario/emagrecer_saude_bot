@@ -37,7 +37,7 @@ jobs:
 
       - name: Criar token.json a partir do Secret
         run: |
-          echo '${{ secrets.BLOGGER_TOKEN_JSON }}' > token.json
+          echo "${{ secrets.BLOGGER_TOKEN_BASE64 }}" | base64 -d > token.json
 
       - name: Rodar Bot Emagrecer
         env:
