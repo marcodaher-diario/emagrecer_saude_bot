@@ -18,7 +18,7 @@ class GeminiEngine:
     def gerar_tema(self, categoria):
 
         prompt = f"""
-Você é um especialista em saúde, nutrição e emagrecimento baseado em evidências.
+Atue como um especialista em saúde, nutrição e emagrecimento baseado em evidências.
 
 Gere um ÚNICO tema altamente relevante e específico dentro da categoria:
 
