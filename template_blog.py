@@ -3,7 +3,7 @@
 def formatar_texto(texto, titulo_principal):
     """
     Processa o corpo do texto: H2 para subtítulos e P para parágrafos.
-    Remove repetições do título principal para evitar o erro visual.
+    Remove repetições do título principal dentro do corpo do texto.
     """
     if not texto:
         return ""
@@ -42,7 +42,7 @@ def formatar_texto(texto, titulo_principal):
 def obter_esqueleto_html(dados):
     """
     Gera o HTML final. 
-    A Ordem 2 (Título) é cumprida via CSS para formatar o título nativo do Blogger.
+    A Ordem 2 (Título) é cumprida via CSS injetado para formatar o título nativo do Blogger.
     """
     titulo = dados.get("titulo", "").strip()
     imagem = dados.get("imagem", "").strip()
@@ -52,18 +52,20 @@ def obter_esqueleto_html(dados):
     conteudo_formatado = formatar_texto(texto_bruto, titulo)
     COR_MD = "rgb(7, 55, 99)"
 
-    # O estilo abaixo formata o título EXTERNO do Blogger (h3.post-title)
+    # O CSS abaixo captura os seletores mais comuns de títulos do Blogger
     return f"""
 <style>
-    /* Ordem 2: Ajusta o título oficial do Blogger */
-    h3.post-title, .post-title, h1.entry-title {{
+    /* Ordem 2: Formata o título externo do Blogger (caixa de título) */
+    h1.post-title, h1.entry-title, h2.post-title, h3.post-title, .post-title {{
         text-align:center !important; 
-        font-family:Arial !important; 
+        font-family:Arial, sans-serif !important; 
         font-size:28px !important; 
         font-weight:bold !important; 
         color:{COR_MD} !important; 
         text-transform:uppercase !important;
         margin-bottom:20px !important;
+        margin-top:10px !important;
+        display: block !important;
     }}
 </style>
 
