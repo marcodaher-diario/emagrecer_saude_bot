@@ -49,10 +49,6 @@ MODELO_GEMINI = "gemini-3-flash-preview"
 MIN_PALAVRAS = 600
 MAX_PALAVRAS = 800
 
-# Parâmetros de Resiliência (Evitar erro 429 - Muitos Acessos)
-MAX_TENTATIVAS = 4          # Tenta 4 vezes antes de desistir do modelo atual
-TEMPO_ESPERA_SEGUNDOS = 30  # Espera 30 segundos entre cada tentativa
-
 # ==========================================
 # BLOCO FIXO FINAL -  ASSINATURA
 # ==========================================
