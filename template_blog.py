@@ -46,7 +46,6 @@ def obter_esqueleto_html(dados):
 <style>
     h3.post-title, .post-title {{ display: none !important; }}
 </style>
-
 <div style="max-width:900px; margin:auto; font-family:Arial, sans-serif; 
             color:rgb(7, 55, 99); line-height:1.7; text-align:justify;">
 
