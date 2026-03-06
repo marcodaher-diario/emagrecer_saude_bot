@@ -112,7 +112,7 @@ def gerar_tags_seo(titulo, texto):
         if p not in stopwords and p not in tags:
             tags.append(p.capitalize())
     
-    tags_fixas = ["Finanças", "Investimentos", "Marco Daher"]
+    tags_fixas = ["Emagrecimento", "Saúde", "Nutrição", "Vida Saudável"]
 
     for tf in tags_fixas:
         if tf not in tags:
