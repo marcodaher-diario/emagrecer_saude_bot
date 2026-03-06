@@ -132,7 +132,7 @@ def gerar_tags_seo(titulo, texto):
 
 
 # ==========================================================
-# EXECUÇÃO PRINCIPAL - EMAGRECER
+# MODO TESTE - EMAGRECER
 # ==========================================================
 
 if __name__ == "__main__":
@@ -171,10 +171,15 @@ if __name__ == "__main__":
             isDraft=True
         ).execute()
 
+        registrar_tema(titulo)
+        
         print("Post de teste criado como rascunho.")
         exit()
-
-    # EXECUÇÃO NORMAL
+        
+# ==========================================================
+# EXECUÇÃO PRINCIPAL - EMAGRECER
+# ==========================================================
+    
     agora = obter_horario_brasilia()
     min_atual = agora.hour * 60 + agora.minute
     data_hoje = agora.strftime("%Y-%m-%d")
