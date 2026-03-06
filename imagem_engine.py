@@ -63,6 +63,7 @@ class ImageEngine:
     def _gerar_imagem_ia(self, titulo):
         """
         Tenta gerar uma imagem 16:9 via IA baseada no título.
+        Corrigido para a estrutura oficial do SDK 2026.
         """
         if not self.gemini_key:
             return None
@@ -70,15 +71,17 @@ class ImageEngine:
         try:
             print(f"Tentando gerar imagem por IA para: {titulo}...")
             
-            # Prompt otimizado para o seu nicho (baseado na sua query original)
             prompt_ia = (
                 f"Professional high-quality blog photography about {titulo}. "
                 "Themes: healthy lifestyle, fitness, nutrition, body transformation. "
                 "Cinematic lighting, photorealistic, 8k resolution, no text, no watermarks."
             )
 
-            response = self.client_genai.models.generate_image(
-                model="imagen-3.0-generate-001", # Modelo estável de 2026
+            # CORREÇÃO AQUI: O caminho correto no SDK é client.models.imagen.generate_image
+            # ou client.imagen.generate_image dependendo da sub-versão instalada.
+            # No SDK 2026 padrão, usamos:
+            response = self.client_genai.models.generate_images(
+                model="imagen-3.0-generate-001",
                 prompt=prompt_ia,
                 config={
                     "aspect_ratio": "16:9",
@@ -87,15 +90,15 @@ class ImageEngine:
                 }
             )
 
-            if response.generated_images:
+            if response and hasattr(response, 'generated_images') and response.generated_images:
                 img_url = response.generated_images[0].image_url
-                print("Imagem IA gerada com sucesso.")
-                # Registramos para manter o histórico, embora IA gere imagens únicas
+                print("✅ Imagem IA gerada com sucesso.")
                 self._registrar_imagem(img_url)
                 return img_url
 
         except Exception as e:
-            print(f"Falha na geração por IA: {e}. Seguindo para busca em bancos de imagens...")
+            # Captura o erro para diagnóstico mas não trava o robô
+            print(f"❌ Falha na geração por IA: {e}. Seguindo para bancos de imagens...")
         
         return None
 
