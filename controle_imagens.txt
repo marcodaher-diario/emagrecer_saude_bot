@@ -24,3 +24,4 @@
 2026-03-06|https://images.pexels.com/photos/14088124/pexels-photo-14088124.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940
 2026-03-06|https://images.pexels.com/photos/4397920/pexels-photo-4397920.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940
 2026-03-06|https://images.pexels.com/photos/4051118/pexels-photo-4051118.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940
+2026-03-10|https://images.pexels.com/photos/12969052/pexels-photo-12969052.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940
