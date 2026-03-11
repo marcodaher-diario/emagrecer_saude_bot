@@ -99,32 +99,142 @@ def registrar_tema(titulo):
 
 
 # ==========================================================
-# GERAR TAGS SEO - GERAL
+# GERAR TAGS SEO - SISTEMA DE CLUSTERS
 # ==========================================================
 
 def gerar_tags_seo(titulo, texto):
-    stopwords = ["com", "de", "do", "da", "em", "para", "um", "uma", "os", "as", "que", "no", "na", "ao", "aos"]
-    conteudo = f"{titulo} {texto[:100]}"
-    palavras = re.findall(r'\b\w{4,}\b', conteudo.lower())
+
+    stopwords = [
+        "com","como","para","porque","sobre","entre","de","do","da",
+        "dos","das","em","um","uma","os","as","que","no","na","ao",
+        "aos","por","mais","menos","ser","estar","ter","se","sua",
+        "seu","suas","seus","também","muito","muitos","muitas"
+    ]
+
+    # ======================================================
+    # CLUSTERS PRINCIPAIS DO BLOG
+    # ======================================================
+
+    clusters = {
+        "emagrecimento": [
+            "emagrecer","emagrecimento","perder peso","gordura","calorias"
+        ],
+        "metabolismo": [
+            "metabolismo","termogênese","termogenese","metabólico","metabolico"
+        ],
+        "nutrição": [
+            "nutrição","nutricao","proteína","proteina","vitaminas","nutrientes"
+        ],
+        "exercícios": [
+            "exercício","exercicio","atividade","treino","movimentos"
+        ],
+        "dietas": [
+            "dieta","dietas","jejum","jejum intermitente","alimentação"
+        ],
+        "saúde metabólica": [
+            "insulina","diabetes","colesterol","pressão","pressao"
+        ]
+    }
+
+    # ======================================================
+    # ENTIDADES IMPORTANTES DO NICHO
+    # ======================================================
+
+    entidades_saude = {
+        "metabolismo": "Metabolismo",
+        "calorias": "Calorias",
+        "insulina": "Insulina",
+        "diabetes": "Diabetes",
+        "colesterol": "Colesterol",
+        "pressão": "Pressão Arterial",
+        "pressao": "Pressão Arterial",
+        "sedentarismo": "Sedentarismo",
+        "termogênese": "Termogênese",
+        "termogenese": "Termogênese"
+    }
+
+    # ======================================================
+    # PALAVRAS DO TÍTULO
+    # ======================================================
+
+    palavras_titulo = re.findall(r'\b[a-zà-ÿ]{4,}\b', titulo.lower())
+
+    # ======================================================
+    # PALAVRAS DO TEXTO
+    # ======================================================
+
+    conteudo = f"{titulo} {texto[:200]}"
+    palavras_texto = re.findall(r'\b[a-zà-ÿ]{4,}\b', conteudo.lower())
+
+    texto_total = conteudo.lower()
+
     tags = []
 
-    for p in palavras:
-        if p not in stopwords and p not in tags:
+    # ======================================================
+    # TAGS DO TÍTULO (PRIORIDADE)
+    # ======================================================
+
+    for p in palavras_titulo:
+        if p not in stopwords and p.capitalize() not in tags:
             tags.append(p.capitalize())
-    
-    tags_fixas = ["Emagrecimento", "Saúde", "Nutrição", "Vida Saudável"]
+
+    # ======================================================
+    # TAGS DO TEXTO
+    # ======================================================
+
+    for p in palavras_texto:
+        if p not in stopwords and p.capitalize() not in tags:
+            tags.append(p.capitalize())
+
+    # ======================================================
+    # DETECÇÃO DE ENTIDADES
+    # ======================================================
+
+    for chave, entidade in entidades_saude.items():
+        if chave in texto_total and entidade not in tags:
+            tags.append(entidade)
+
+    # ======================================================
+    # DETECÇÃO DE CLUSTERS
+    # ======================================================
+
+    for cluster, palavras in clusters.items():
+        for palavra in palavras:
+            if palavra in texto_total:
+                cluster_formatado = cluster.capitalize()
+                if cluster_formatado not in tags:
+                    tags.append(cluster_formatado)
+                break
+
+    # ======================================================
+    # TAGS FIXAS DO BLOG
+    # ======================================================
+
+    tags_fixas = [
+        "Emagrecimento",
+        "Saúde",
+        "Nutrição",
+        "Vida Saudável"
+    ]
 
     for tf in tags_fixas:
         if tf not in tags:
             tags.append(tf)
 
+    # ======================================================
+    # LIMITADOR DE 200 CARACTERES
+    # ======================================================
+
     resultado = []
     tamanho_atual = 0
 
     for tag in tags:
-        if tamanho_atual + len(tag) + 2 <= 200:
+
+        tamanho_tag = len(tag)
+
+        if tamanho_atual + tamanho_tag + 2 <= 200:
             resultado.append(tag)
-            tamanho_atual += len(tag) + 2
+            tamanho_atual += tamanho_tag + 2
         else:
             break
 
