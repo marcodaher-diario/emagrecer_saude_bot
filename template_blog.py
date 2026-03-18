@@ -1,174 +1,106 @@
 # -*- coding: utf-8 -*-
 import re
 
-def formatar_texto(texto, titulo_principal):
-
-    if texto is None:
-        return ""
-
-    linhas = [l.rstrip() for l in texto.split("\n") if l.strip()]
-    html_final = ""
+def formatar_conteudo_inteligente(texto_bruto, titulo_principal):
+    if not texto_bruto: return ""
+    
+    linhas = [l.strip() for l in texto_bruto.split("\n") if l.strip()]
+    html_final = []
     titulo_norm = titulo_principal.strip().lower()
-
     lista_aberta = False
 
     for linha in linhas:
-
-        linha_limpa = linha.strip()
-
-        # remove markdown
-        linha_limpa = linha_limpa.strip("#* ").strip()
-
-        # remove repetição do título
-        if linha_limpa.lower() == titulo_norm:
+        # 1. Conversão de Negritos e Itálicos (Markdown para HTML)
+        l_proc = re.sub(r"\*\*(.*?)\*\*", r"<strong>\1</strong>", linha)
+        l_proc = re.sub(r"\*(.*?)\*", r"<em>\1</em>", l_proc)
+        
+        # 2. Limpeza de marcadores Markdown (# e *)
+        l_limpa = l_proc.lstrip("#* ").strip()
+        
+        # 3. Filtro Anti-Repetição do Título
+        if l_limpa.lower() == titulo_norm or not l_limpa:
             continue
 
-        # converter **negrito**
-        linha_limpa = re.sub(r"\*\*(.*?)\*\*", r"<strong>\1</strong>", linha_limpa)
-
-        palavras = linha_limpa.split()
-
-        # =========================
-        # DETECTAR LISTAS
-        # =========================
-        if linha.startswith("- ") or linha.startswith("* ") or re.match(r"^\d+\.", linha):
-
+        # 4. Tratamento de Listas (UL/LI)
+        if linha.startswith(("- ", "* ")) or re.match(r"^\d+\.", linha):
             if not lista_aberta:
-                html_final += "\n<ul class='lista-post'>\n"
+                html_final.append('<ul class="lst">')
                 lista_aberta = True
-
-            item = re.sub(r"^[-*\d. ]+", "", linha_limpa)
-
-            html_final += f"<li>{item}</li>\n"
+            item = re.sub(r"^[-*\d. ]+", "", l_limpa)
+            html_final.append(f'<li>{item}</li>')
             continue
-
         else:
             if lista_aberta:
-                html_final += "</ul>\n"
+                html_final.append('</ul>')
                 lista_aberta = False
 
-        # =========================
-        # DETECÇÃO DE SUBTÍTULO (H2)
-        # =========================
-        condicao_subtitulo = (
-            3 <= len(palavras) <= 22
-            and not linha_limpa.endswith(".")
-            and not linha_limpa.endswith(":")
-            and linha_limpa[0].isupper()
-        )
+        # 5. DETECÇÃO DE HIERARQUIA (H1, H2, H3)
+        # Contagem de palavras para diferenciar título de parágrafo
+        texto_puro = re.sub(r"<.*?>", "", l_limpa)
+        palavras = texto_puro.split()
+        
+        # Critério: Se começa com # (Markdown) ou é curto e sem ponto final
+        e_titulo = (linha.startswith("#") or (len(palavras) <= 15 and not texto_puro.endswith((".", ":", "?", "!"))))
 
-        if condicao_subtitulo:
+        if e_titulo:
+            # H1 Manual (Se o usuário usar # no texto)
+            if linha.startswith("# "):
+                html_final.append(f'<h1 class="t1">{l_limpa}</h1>')
+            # H2 (Padrão para seções ou ##)
+            elif linha.startswith("## ") or not linha.startswith("### "):
+                html_final.append(f'<h2 class="t2">{l_limpa}</h2>')
+            # H3 (Subseções ou ###)
+            else:
+                html_final.append(f'<h3 class="t3">{l_limpa}</h3>')
+        else:
+            # 6. Parágrafo Normal
+            html_final.append(f'<p class="txt">{l_limpa}</p>')
 
-            html_final += f"""
-<h2 class="subtitulo">
-{linha_limpa}
-</h2>
-"""
-            continue
+    if lista_aberta: html_final.append('</ul>')
+    return "\n".join(html_final)
 
-        # =========================
-        # PARÁGRAFO NORMAL
-        # =========================
-        html_final += f"""
-<p class="paragrafo">
-{linha_limpa}
-</p>
-"""
-
-    if lista_aberta:
-        html_final += "</ul>\n"
-
-    return html_final
-# ==============================
-# MONTAGEM DO HTML
-# ==============================
 def obter_esqueleto_html(dados):
+    t = dados.get("titulo", "").strip()
+    img = dados.get("imagem", "").strip()
+    txt = dados.get("texto_completo", "")
+    ass = dados.get("assinatura", "")
+    
+    cor = "rgb(7, 55, 99)"
 
-    titulo = dados.get("titulo", "").strip()
-    imagem = dados.get("imagem", "").strip()
-    texto_bruto = dados.get("texto_completo", "")
-    assinatura = dados.get("assinatura", "")
-
-    conteudo_formatado = formatar_texto(texto_bruto, titulo)
-
-    COR_MD = "rgb(7,55,99)"
-
-    html = f"""
+    return f"""
 <style>
+/* Container Principal */
+.post-master {{ max-width:900px; margin:auto; font-family:sans-serif; color:{cor}; line-height:1.6; }}
 
-.post-title,
-.entry-title,
-h3.post-title.entry-title{{
-text-align:center !important;
-margin-top:10px !important;
-margin-bottom:20px !important;
-font-family:Arial, sans-serif !important;
-font-size:28px !important;
-font-weight:bold !important;
-text-transform:uppercase !important;
+/* Títulos Automáticos do Blogger (H1/H3 dependendo do tema) */
+.post-title, .entry-title, h1.post-title {{
+    text-align:center!important; font-size:28px!important; text-transform:uppercase!important; 
+    font-weight:bold!important; margin:10px 0 25px 0!important; color:{cor}!important;
 }}
 
-.post-title a,
-.entry-title a,
-h3.post-title.entry-title a{{
-display:block !important;
-color:{COR_MD} !important;
-}}
+/* Imagem 16:9 Responsiva */
+.img-c {{ text-align:center; margin-bottom:25px; }}
+.img-p {{ width:100%; height:auto; aspect-ratio:16/9; object-fit:cover; border-radius:8px; }}
 
-.post-title a:hover,
-.entry-title a:hover{{
-color:rgb(10,80,140) !important;
-}}
+/* Hierarquia de Títulos no Corpo do Texto */
+.t1 {{ font-size:26px!important; font-weight:bold!important; text-align:center!important; margin:30px 0 15px 0!important; text-transform:uppercase!important; color:{cor}!important; }}
+.t2 {{ font-size:22px!important; font-weight:bold!important; text-align:left!important; margin:30px 0 12px 0!important; text-transform:uppercase!important; color:{cor}!important; }}
+.t3 {{ font-size:19px!important; font-weight:bold!important; text-align:left!important; margin:25px 0 10px 0!important; color:{cor}!important; }}
 
-.post-container {{
-max-width:900px;
-margin:auto;
-font-family:Arial,sans-serif;
-}}
+/* Parágrafos e Listas */
+.txt {{ font-size:18px!important; text-align:justify!important; margin-bottom:15px!important; color:{cor}!important; }}
+.lst {{ margin-bottom:20px; padding-left:25px; }}
+.lst li {{ font-size:18px!important; margin-bottom:8px; color:{cor}!important; }}
 
-.post-img {{
-width:100%;
-height:auto;
-aspect-ratio:16/9;
-object-fit:cover;
-border-radius:8px;
-}}
-
-.subtitulo {{
-text-align:left;
-font-family:Arial;
-color:{COR_MD};
-font-size:20px;
-font-weight:bold;
-text-transform:uppercase;
-margin-top:25px;
-margin-bottom:10px;
-}}
-
-.paragrafo {{
-text-align:justify;
-font-family:Arial;
-color:{COR_MD};
-font-size:18px;
-line-height:1.6;
-margin-bottom:15px;
-}}
-
+/* Assinatura */
+.sig {{ margin-top:35px; border-top:1px solid #eee; padding-top:20px; font-style:italic; }}
 </style>
 
-<div class="post-container">
-
-<div style="text-align:center; margin-bottom:25px;">
-<img src="{imagem}" alt="{titulo}" class="post-img">
-</div>
-
-<div class="conteudo-post">
-{conteudo_formatado}
-</div>
-
-{assinatura}
-
+<div class="post-master">
+    <div class="img-c"><img src="{img}" alt="{t}" class="img-p" loading="lazy"></div>
+    <div class="conteudo-principal">
+        {formatar_conteudo_inteligente(txt, t)}
+    </div>
+    <div class="sig">{ass}</div>
 </div>
 """
-
-    return html
