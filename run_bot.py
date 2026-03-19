@@ -212,9 +212,7 @@ def gerar_tags_seo(titulo, texto):
 
     tags_fixas = [
         "Emagrecimento",
-        "Saúde",
-        "Nutrição",
-        "Vida Saudável"
+        "Saúde"
     ]
 
     for tf in tags_fixas:
@@ -339,7 +337,7 @@ if __name__ == "__main__":
         body={
             "title": titulo,
             "content": html,
-            "labels": gerar_tags_seo(titulo)
+            "labels": gerar_tags_seo(titulo, texto)
         },
         isDraft=False
     ).execute()
