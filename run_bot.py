@@ -306,7 +306,8 @@ if __name__ == "__main__":
                 break
 
     if not horario_escolhido:
-        exit()
+    print("Fora da janela de postagem.")
+    exit()
 
     gemini = GeminiEngine()
     imagem_engine = ImageEngine()
