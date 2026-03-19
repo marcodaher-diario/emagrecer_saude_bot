@@ -43,6 +43,9 @@ def formatar_conteudo_otimizado(texto_bruto, titulo_principal):
     if lista_aberta: html_final.append('</ul>')
     return "\n".join(html_final)
 
+# =================
+# MONTAGEM DO HTML 
+# =================
 def obter_esqueleto_html(dados):
     # Pega os dados e limpa
     t = dados.get("titulo", "").strip()
@@ -50,11 +53,13 @@ def obter_esqueleto_html(dados):
     txt = dados.get("texto_completo", "")
     ass = dados.get("assinatura", "")
     
-    cor = "rgb(7,55,99)"
     conteudo = formatar_conteudo_otimizado(txt, t)
+
+    cor = "rgb(7,55,99)"
 
     # Estilo concentrado no topo: o Blogger lê uma vez e aplica a tudo
     return f"""
+    
 <style>
 .post-corpo {{ max-width:900px; margin:auto; font-family: 'Open Sans', Arial, sans-serif; color:{cor}; }}
 .post-title, .entry-title {{ text-align:center!important; font-size:28px!important; text-transform:uppercase!important; font-weight:bold!important; margin:10px 0 25px 0!important; color:{cor}!important; }}
