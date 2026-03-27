@@ -12,7 +12,7 @@ AGENDA_POSTAGENS = {
     "15:00": "auto"  # Terça, Quinta e Sábado (controlado pelo workflow)
 }
 
-JANELA_MINUTOS = 60
+JANELA_MINUTOS = 90
 
 # ==========================================
 # CATEGORIAS EDITORIAIS
