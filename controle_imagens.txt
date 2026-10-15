@@ -75,3 +75,4 @@
 2026-10-11|https://images.pexels.com/photos/6642939/pexels-photo-6642939.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940
 2026-10-11|https://images.pexels.com/photos/6167443/pexels-photo-6167443.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940
 2026-10-13|https://images.pexels.com/photos/8093227/pexels-photo-8093227.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940
+2026-10-15|https://images.pexels.com/photos/13218565/pexels-photo-13218565.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940
